@@ -24,6 +24,13 @@
 #   Boolean.  Enable logstash json logging
 #   Default: false
 #
+# [*webserver_type*]
+#   String. The type of server that runs Kibana
+#   Can be on of: apache, nginx
+#   Default: apache
+#
+# [*application_root*]
+#   String. Path to application root
 #
 # === Examples
 #
@@ -48,7 +55,9 @@ class kibana (
                           'text', 'hits', 'column', 'trends', 'bettermap', 'query',
                           'terms', 'stats', 'sparklines' ],
   $logstash_logging = false,
+  $webserver_type   = 'apache',
   $default_board    = 'default.json',
+  $application_root = '/var/www/html/kibana',
 ) {
 
   class { 'kibana::package':
@@ -56,11 +65,13 @@ class kibana (
   }
 
   class { 'kibana::config':
-    es_host           => $es_host,
-    es_port           => $es_port,
-    modules           => $modules,
-    logstash_logging  => $logstash_logging,
-    default_board     => $default_board,
+    es_host          => $es_host,
+    es_port          => $es_port,
+    modules          => $modules,
+    logstash_logging => $logstash_logging,
+    webserver_type   => $webserver_type,
+    default_board    => $default_board,
+    application_root => $application_root,
   }
 
   anchor { 'kibana::begin': }

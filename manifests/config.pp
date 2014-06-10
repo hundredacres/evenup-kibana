@@ -18,8 +18,10 @@ class kibana::config (
   $modules            = [ 'histogram','map','table','filtering','timepicker',
                         'text','fields','hits','dashcontrol','column',
                         'derivequeries','trends','bettermap','query','terms' ],
-  $logstash_logging   = false,
-  $default_board      = 'default.json',
+  $logstash_logging = false,
+  $webserver_type   = 'apache',
+  $default_board    = 'default.json',
+  $application_root = '/var/www/html/kibana',
 ) {
 
   $es_real = $es_host ? {
@@ -27,23 +29,23 @@ class kibana::config (
     default => "http://${es_host}:${es_port}"
   }
 
-  file { '/var/www/html/kibana/config.js':
+  file { "${application_root}/config.js":
     ensure  => file,
     owner   => 'root',
     group   => 'root',
     mode    => '0444',
     content => template('kibana/config.js'),
+    require => Package["${kibana::webserver_type}"],
   }
 
-  apache::vhost { 'kibana':
-    serverName  => $::fqdn,
-    serverAlias => ['kibana.ineu.us'],
-    docroot     => '/var/www/html/kibana',
-    logstash    => $logstash_logging,
+  case $webserver_type {
+    apache: { include kibana::server::apache }
+    nginx: { include kibana::server::nginx }
+    default: { include kibana::server::apache }
   }
 
   if $default_board != 'default.json' {
-    file { '/var/www/html/kibana/app/dashboards/default.json':
+    file { "${application_root}/app/dashboards/default.json":
       ensure  => link,
       target  => "/var/www/html/kibana/app/dashboards/${default_board}",
       force   => true,
